@@ -1,6 +1,6 @@
 /*
 ========================================================================================================================================================================================
-Name : .c
+Name : 8e.c
 Author : Kartavyakumar Patel
 Description : 8. Write a separate program using signal system call to catch the following signals.
               a. SIGSEGV
@@ -11,13 +11,39 @@ Description : 8. Write a separate program using signal system call to catch the 
               f. SIGVTALRM (use setitimer system call)
               g. SIGPROF (use setitimer system call)
 
-Date : th sept, 2025
+Date : 28th sept, 2025
 ========================================================================================================================================================================================
 */
 
+#include <stdio.h>
+#include<sys/time.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <unistd.h>
 
+void handle(int sig) {
+    printf("Caught SIGALRM(settimer..)\n");
+}
+
+int main() {
+    signal(SIGALRM, handle);
+    printf("trigger SIGINT...\n");
+    struct itimerval t;
+    t.it_value.tv_sec=2;
+    t.it_value.tv_usec=0;
+    t.it_interval.tv_sec=0;
+    t.it_interval.tv_usec=0;
+    setitimer(ITIMER_REAL,&t,NULL);
+    
+    pause();
+    
+    return 0;
+}
 /*
  Output:
 
+dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./a.out
+trigger SIGINT...
+Caught SIGALRM(settimer..)
 
 */
