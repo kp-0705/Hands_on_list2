@@ -17,11 +17,11 @@ Date : 18th sept, 2025
 int main()
 {
   int file_des;
-  mkfifo("fifo_20a",0666);
+  const char *fifo ="fifo_20a";
   char para1[100];
   while(1)
   {
-  file_des=open("fifo_20a",O_RDONLY);
+  file_des=open(fifo,O_RDONLY);
   read(file_des,para1,sizeof(para1));
   printf("READ DATA::\n%s\n",para1);
   close(file_des);

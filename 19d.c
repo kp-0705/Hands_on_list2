@@ -2,7 +2,7 @@
 ========================================================================================================================================================================================
 Name : 19d.c
 Author : Kartavyakumar Patel
-Description : 19. Create a FIFO file by
+Description : 19.Create a FIFO file by
               d. mknod system call
 
 Date : 17th sept, 2025
@@ -16,7 +16,7 @@ Date : 17th sept, 2025
 
 int main()
 {
- if(mknod("fifo_19d",S_IFIFO | 0666,0)==-1)
+ if(mknod("fifo_19d",S_IFIFO | 0666,0)==-1) //0 (for FIFO ,ignore)->Major/minor device number.
   {
    perror("MKNOD::");
    return 1;

@@ -23,19 +23,20 @@ int main() {
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
 
-    // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    {
         perror("socket failed");
         exit(1);
     }
     
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))//allow reusing the same port 
+    {
         perror("setsockopt");
         exit(1);
     }
-    address.sin_family = AF_INET;
+    address.sin_family = AF_INET; //address family to IPv4.
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons(PORT); //Converts port number from host byte order to network byte order.
 
     // Attaching socket to the port 8080
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0) {

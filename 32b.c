@@ -12,152 +12,85 @@ Date : 23th sept, 2025
 ========================================================================================================================================================================================
 */
 
-#include <sys/ipc.h>   
-#include <sys/sem.h>   
-#include <sys/types.h> 
-#include <sys/stat.h>  
-#include <fcntl.h>     
-#include <unistd.h>    
-#include <stdio.h>   
-#include <sys/shm.h>   
- 
-void main()
-{
-    key_t semKey;      
-    int semIdentifier; 
-    int semctlStatus;  
-    int semopStatus;   
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/shm.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
-    key_t shmKey;         
-    int shmIdentifier;    
-    ssize_t shmSize = 20; 
-    char *shmPointer;
+union semun {
+    int val;
+};
 
-   
-
-    
-    union semun
-    {
-        int val;              
-        struct semid_ds *buf;  
-        unsigned short *array; 
-        struct seminfo *__buf; 
-    } semSet;
-
-    semKey = ftok(".", 3321);
-    if (semKey == -1)
-    {
-        perror("Error while computing key!");
-        _exit(1);
+int main()
+{    
+    key_t shm_key = ftok(".", 'M');
+    int shmid = shmget(shm_key, 100, IPC_CREAT | 0666);
+    if (shmid == -1) {
+        perror("shmget error");
+        return 1;
     }
 
-    semIdentifier = semget(semKey, 1, 0); // Get the semaphore if it exists
-    if (semIdentifier == -1)
-    {
-        semIdentifier = semget(semKey, 1, IPC_CREAT | 0700); // Create a new semaphore
-        if (semIdentifier == -1)
-        {
-            perror("Error while creating semaphore!");
-            _exit(1);
-        }
-
-        semSet.val = 1; // Set a binary semaphore
-        semctlStatus = semctl(semIdentifier, 0, SETVAL, semSet);
-        if (semctlStatus == -1)
-        {
-            perror("Error while initializing a binary sempahore!");
-            _exit(1);
-        }
-    }
-    shmKey = ftok(".", 3322);
-
-    if (shmKey == -1)
-    {
-        perror("Error while computing key!");
-        _exit(0);
+    char *shared = (char *)shmat(shmid, NULL, 0);
+    if (shared == (void *)-1) {
+        perror("shmat error");
+        return 1;
     }
 
-    shmIdentifier = shmget(shmKey, shmSize, IPC_CREAT | 0700); // Create the shared memory if it doesn't exist; if it exists use the existing one
-
-    if (shmIdentifier == -1)
+    key_t sem_key = ftok(".", 'S');
+    int semid = semget(sem_key, 1, IPC_CREAT | 0666);
+    if (semid == -1) 
     {
-        perror("Error while getting Shared Memory!");
-        _exit(0);
+        perror("semget error");
+        return 1;
     }
 
- 
+    union semun u;
+    u.val = 1;
+    semctl(semid, 0, SETVAL, u);
 
-    shmPointer = shmat(shmIdentifier, (void *)0, 0);
+    // Semaphore P and V operations
+    struct sembuf P = {0, -1, 0};   // Lock
+    struct sembuf V = {0,  1, 0};   // Unlock
 
-    if (*shmPointer == -1)
-    {
-        perror("Error while attaching address space!");
-        _exit(0);
-    }
-
- 
-
-    struct sembuf semOp; // Defines the operation on the semaphore
-    semOp.sem_num = 0;
-    semOp.sem_flg = 0;
-
-    printf("Press enter to lock the critical section!\n");
-    getchar();
-    
-    // Use semaphore to lock the critical section
-    semOp.sem_op = -1;
-    semopStatus = semop(semIdentifier, &semOp, 1);
-    if (semopStatus == -1)
-    {
-        perror("Error while operating on semaphore!");
-        _exit(1);
-    }
-    
-    printf("Critical Section is now locked!\n");
-
-    printf("Start of the critical section!\n");
-
-    
-
-    printf("Writing to the shared memory!\n");
-  
-    sprintf(shmPointer, "Yolo");
-
-    printf("Press enter to read from the shared memory!\n");
+    printf("Press ENTER to write to shared memory..\n");
     getchar();
 
-  
-    printf("%s\n", shmPointer);
+    semop(semid, &P, 1);
+    printf("LOCK && Writing ...\n");
 
-    printf("Press enter to exit the critical section!\n");
-    getchar();
+    strcpy(shared, "data written");
+    printf("Shared Memory Data: %s\n", shared);
 
+    sleep(5);  // simulate slow write
+    semop(semid, &V, 1);
+    printf("LOCK released.\n");
 
-    semOp.sem_op = 1;
-    semopStatus = semop(semIdentifier, &semOp, 1);
-    if (semopStatus == -1)
-    {
-        perror("Error while operating on semaphore!");
-        _exit(1);
-    }
+    // Detach shared memory
+    shmdt(shared);
 
-    printf("Critical section is now unlocked!\n");
+    return 0;
 }
 
 /*
  Output:
-
+ *****Terminal 1....
 dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./a.out
-Press enter to lock the critical section!
+Press ENTER to write to shared memory..
 
-Critical Section is now locked!
-Start of the critical section!
-Writing to the shared memory!
-Press enter to read from the shared memory!
+LOCK && Writing ...
+Shared Memory Data: data written
+LOCK released.
 
-Yolo
-Press enter to exit the critical section!
 
-Critical section is now unlocked!
+ *****Terminal 2....
+dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./a.out
+Press ENTER to write to shared memory..
+sdj c
+cnsk
+LOCK && Writing ...
+Shared Memory Data: data written
+LOCK released.
 
 */

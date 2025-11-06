@@ -3,8 +3,8 @@
 Name : 27.c
 Author : Kartavyakumar Patel
 Description : 27. Write a program to receive messages from the message queue.
-              a. with 0 as a flag
-              b. with IPC_NOWAIT as a flag
+               a. with 0 as a flag
+               b. with IPC_NOWAIT as a flag
 
 Date : 19th sept, 2025
 ========================================================================================================================================================================================
@@ -37,14 +37,14 @@ printf("Msg queue :: KEY::%d\n",k);
  }
  printf("Msg queue :: ID::%d\n",mid);
  
- if(msgrcv(mid,&me,sizeof(me.m_text),0,0)==-1)
+ if(msgrcv(mid,&me,sizeof(me.m_text),0,0)==-1) //waits until a message comes
  {
  perror("MSGRCV::");
  exit(1);
  }
   printf("Blocking receive:  %s\n", me.m_text);
   
-if(msgrcv(mid,&me,sizeof(me.m_text),0,IPC_NOWAIT)==-1)
+if(msgrcv(mid,&me,sizeof(me.m_text),0,IPC_NOWAIT)==-1) //Returns immediately if queue is empty
  {
    if(errno==ENOMSG)
    printf("No messages in queue\n");

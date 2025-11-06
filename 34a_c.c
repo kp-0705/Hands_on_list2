@@ -9,108 +9,60 @@ Description : 34. Write a program to create a concurrent server.
 Date : 25th sept, 2025
 ========================================================================================================================================================================================
 */
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/ip.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <pthread.h>
-#include <string.h>
+#include <arpa/inet.h>
 
-// Thread function
-void *communicate(void *arg) {
-    int fd = *(int*)arg;
-    free(arg); // free memory allocated for fd
+#define PORT 8080
 
-    ssize_t readBytes, writeBytes;
-    char dataFromClient[100] = {0};
-
-    // Send message to client
-    writeBytes = write(fd, "I'm the server!", 15);
-    if (writeBytes == -1)
-        perror("Error while writing to client");
-    else
-        printf("Data sent to client!\n");
-
-    // Read message from client
-    readBytes = read(fd, dataFromClient, sizeof(dataFromClient));
-    if (readBytes == -1)
-        perror("Error while reading from client");
-    else
-        printf("Data from client: %s\n", dataFromClient);
-
-    close(fd);
-    return NULL;
-}
-
-int main() {
-    int socketFileDescriptor, connectionFileDescriptor;
-    int bindStatus, listenStatus;
-    socklen_t clientSize;
-
-    struct sockaddr_in address, client;
-    pthread_t threadID;
+int main()
+{
+    int sock = 0;
+    struct sockaddr_in serv_addr;
+    char buffer[1024] = {0};
 
     // Create socket
-    socketFileDescriptor = socket(AF_INET, SOCK_STREAM, 0);
-    if (socketFileDescriptor == -1) {
-        perror("Error while creating socket");
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1) {
+        perror("socket");
         exit(1);
     }
-    printf("Server side socket successfully created!\n");
 
-    address.sin_addr.s_addr = htonl(INADDR_ANY);
-    address.sin_family = AF_INET;
-    address.sin_port = htons(8080);
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
 
-    // Bind
-    bindStatus = bind(socketFileDescriptor, (struct sockaddr *)&address, sizeof(address));
-    if (bindStatus == -1) {
-        perror("Error while binding socket");
-        exit(1);
-    }
-    printf("Binding successful!\n");
-
-    // Listen
-    listenStatus = listen(socketFileDescriptor, 5);
-    if (listenStatus == -1) {
-        perror("Error while listening");
-        exit(1);
-    }
-    printf("Server listening on port 8080...\n");
-
-    // Accept multiple clients
-    while (1) {
-        clientSize = sizeof(client);
-        connectionFileDescriptor = accept(socketFileDescriptor, (struct sockaddr *)&client, &clientSize);
-        if (connectionFileDescriptor == -1) {
-            perror("Error while accepting connection");
-            continue;
-        }
-
-        int *fdPtr = malloc(sizeof(int));
-        *fdPtr = connectionFileDescriptor;
-
-        if (pthread_create(&threadID, NULL, communicate, fdPtr) != 0) {
-            perror("Error while creating thread");
-            close(connectionFileDescriptor);
-            free(fdPtr);
-        } else {
-            pthread_detach(threadID); // auto-clean thread
-        }
+    // Convert SERVER IP string to binary
+    if (inet_pton(AF_INET, "SERVER_IP", &serv_addr.sin_addr) <= 0) {
+        printf("Invalid address\n");
+        return -1;
     }
 
-    close(socketFileDescriptor);
+    // Connect to server
+    if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("connect");
+        return -1;
+    }
+
+    char *msg = "Hello Server, this is Client!";
+
+    send(sock, msg, strlen(msg), 0);
+    printf("Message sent to server.\n");
+
+    // Receive reply
+    read(sock, buffer, sizeof(buffer));
+    printf("Received from server: %s\n", buffer);
+
+    close(sock);
     return 0;
 }
 
 /*
  Output:
-dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./34c
-Server side socket successfully created!
-Binding successful!
-Server listening on port 8080...
+dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./ce
+Hello message sent
+
 
 
 */

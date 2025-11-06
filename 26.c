@@ -32,10 +32,9 @@ printf("Msg queue :: KEY::%d\n",k);
  exit(1);
  }
  printf("Msg queue :: ID::%d\n",mid);
-printf("ENTER  Msg To sENd\n");
+printf("ENTER Msg To sENd\n");
 fgets(me.m_text,sizeof(me.m_text),stdin);
 me.m_type=1;
-
 if(msgsnd(mid,&me,sizeof(me.m_text),0)==-1)
 {
  perror("MSGSND::");

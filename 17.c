@@ -47,8 +47,8 @@ switch(ch)
     close(file_d[0]);
     close(1);
     dup(file_d[1]);
-    close(file_d[1]);
-    execlp("ls","ls","-l",NULL);
+    close(file_d[1]);//Duplicate pipe write end to stdout 
+    execlp("ls","ls","-l",NULL);//Replaces current process with a new program.
     perror("EXECLP ERROR LS::");
     }
     else

@@ -1,9 +1,9 @@
 /*
 ========================================================================================================================================================================================
-Name : 13.c
+Name : 13rec.c
 Author : Kartavyakumar Patel
 Description : 13. Write two programs: first program is waiting to catch SIGSTOP signal, the second program will send the signal (using kill system call). 
-              Find out whetherthe first program is able to catch the signal or not.
+              Find out whether the first program is able to catch the signal or not.
             
 Date : 29th sept, 2025
 ========================================================================================================================================================================================
@@ -18,20 +18,13 @@ printf("Caught SIGNAL %d.....\n",seg);
 
 int main()
 {
-struct sigaction sig;
-sig.sa_handler=handle;
-sigemptyset(&sig.sa_mask);
-sig.sa_flags=0;
-
-if(sigaction(SIGSTOP,&sig,NULL)==-1)
- {perror("sigaction:: ");}
-
 printf("Process ID:: %d\n",getpid());
+signal(SIGSTOP,handle);
 printf("Waiting....\n");
 
 while(1)
 {
-sleep(1);
+pause();// Waiting for signals
 }
 return 0;
 }

@@ -27,8 +27,8 @@ int main()
  key_t k;
  int mid;
  struct msqid_ds q_info;
- k=ftok(".",'B');
- if(k==-1)// generate unique key for mesgqueue...
+ k=ftok(".",'B');//generate unique key for IPC...
+ if(k==-1)       //"." means current directory
  {
   perror("MSGQUEUE::");
   exit(1);

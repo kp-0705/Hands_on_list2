@@ -20,17 +20,17 @@ printf("EXPIRED!\n");
 int main()
 {
 struct itimerval t;
-signal(SIGALRM,myhandler);
+signal(SIGALRM,myhandler);//Whenever ITIMER_REAL expires, SIGALRM is sent to the process.
 t.it_value.tv_sec=10;
 t.it_value.tv_usec=0;
 t.it_interval.tv_sec=10;
 t.it_interval.tv_usec=0;
-
+ // Start the interval timer:
 setitimer(ITIMER_REAL,&t,NULL);
 
 while(1)
 {
-pause();
+pause(); // Waiting for SIGALRM
 }
 return 0;
 }

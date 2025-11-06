@@ -11,9 +11,9 @@ Date : 28th sept, 2025
 #include <pthread.h>
 #include <unistd.h>
 
-void* make_thread(void* arg)
+void* make_thread(void* arg)//thread function must return void*
 {
-  int num=*((int*)arg);
+  int num=*((int*)arg); //Convert the passed argument (void*) back to int*
   printf("thread num %d\n",num);
 }
 int main()
@@ -23,12 +23,12 @@ int main()
     for(int i=0;i<5;i++)
     {
     ids[i]=i+1;
-    if(pthread_create(&threads[i],NULL,make_thread,&ids[i])!=0)
+    if(pthread_create(&threads[i],NULL,make_thread,&ids[i])!=0)// Create a new thread
     {perror("Failed.....::");}
     }
     for(int i=0;i<5;i++)
     {
-    pthread_join(threads[i],NULL);
+    pthread_join(threads[i],NULL);  //Wait for each thread to finish.
     }
     return 0;
 }

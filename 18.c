@@ -23,7 +23,7 @@ int main()
    
    dup2(fd1[1],1);
    close(fd1[0]);
-   execlp("ls","ls","-l",NULL);
+   execlp("ls","ls","-l",NULL);//Replaces current process with a new program.
    }
    else
    {
@@ -37,7 +37,7 @@ int main()
      dup2(fd1[0],0);
      close(1);
      dup2(fd2[1],1);
-     execlp("grep","grep","^d",NULL);
+     execlp("grep","grep","^d",NULL);//Replaces current process with a new program.
      }
      else
      {
@@ -45,10 +45,10 @@ int main()
       close(fd1[1]);
       
       close(0);
-      dup2(fd2[0],0);
-      
+      dup2(fd2[0],0);//redirects the pipe’s read end to standard input. 
+                    // read data coming through the pipe instead of the keyboard.
       close(fd2[1]);
-      execlp("wc","wc",NULL);
+      execlp("wc","wc",NULL);//Replaces current process with a new program.
      }
    }
    return 0;

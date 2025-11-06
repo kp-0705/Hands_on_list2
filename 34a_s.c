@@ -10,119 +10,69 @@ Date : 25th sept, 2025
 ========================================================================================================================================================================================
 */
 
-
-#include <arpa/inet.h>
-#include <netinet/in.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
+#include <stdlib.h>
 #include <unistd.h>
- 
+#include <arpa/inet.h>
 
-#define PORT 4444
- 
+#define PORT 8080
+
 int main()
 {
- 
-    int sockfd, ret;
- 
-    
-    struct sockaddr_in serverAddr;
- 
-  
-    int clientSocket;
- 
- 
-    struct sockaddr_in cliAddr;
- 
+    int server_fd, new_socket;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
+    char buffer[1024] = {0};
 
-    socklen_t addr_size;
- 
-
-    pid_t childpid;
- 
-  
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
- 
-    
-    if (sockfd < 0) {
-        printf("Error in connection.\n");
+    // Create socket
+    server_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd == -1) {
+        perror("socket");
         exit(1);
     }
- 
-    printf("Server Socket is created.\n");
- 
-    
-    memset(&serverAddr, '\0',
-           sizeof(serverAddr));
- 
 
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(PORT);
- 
-    
-    serverAddr.sin_addr.s_addr
-        = inet_addr("127.0.0.1");
- 
-   
-    ret = bind(sockfd,
-               (struct sockaddr*)&serverAddr,
-               sizeof(serverAddr));
- 
+    // Server address setup
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;   // Accept from any IP
+    address.sin_port = htons(PORT);
 
-    if (ret < 0) {
-        printf("Error in binding.\n");
+    // Bind socket to port
+    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+        perror("bind");
         exit(1);
     }
- 
-    
-    if (listen(sockfd, 10) == 0) {
-        printf("Listening...\n\n");
-    }
- 
-    int cnt = 0;
-    while (1) {
- 
-       
-        clientSocket = accept(
-            sockfd, (struct sockaddr*)&cliAddr,
-            &addr_size);
- 
-   
-        if (clientSocket < 0) {
-            exit(1);
-        }
- 
-      
-        printf("Connection accepted from %s:%d\n",
-               inet_ntoa(cliAddr.sin_addr),
-               ntohs(cliAddr.sin_port));
- 
-        printf("Clients connected: %d\n\n",
-               ++cnt);
- 
-        if ((childpid = fork()) == 0) {
- 
-          
-            close(sockfd);
- 
-         
-   
-            send(clientSocket, "hi client",
-                 strlen("hi client"), 0);
-        }
+
+    // Listen for client
+    listen(server_fd, 3);
+    printf("Server waiting for connection...\n");
+
+    // Accept connection
+    new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+    if (new_socket < 0) {
+        perror("accept");
+        exit(1);
     }
 
-    close(clientSocket);
+    // Read message
+    read(new_socket, buffer, sizeof(buffer));
+    printf("Received from client: %s\n", buffer);
+
+    // Reply to client
+    char *msg = "Message received by server!";
+    send(new_socket, msg, strlen(msg), 0);
+
+    close(new_socket);
+    close(server_fd);
     return 0;
 }
+
 /*
  Output:
-dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./34s
-Server Socket is created.
-Listening...
+dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./se
+Message from client: Hello from client
+
+
 
 
 */

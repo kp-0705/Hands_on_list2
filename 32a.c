@@ -12,161 +12,86 @@ Date : 23th sept, 2025
 ========================================================================================================================================================================================
 */
 
-#include <sys/ipc.h>   
-#include <sys/sem.h>   
-#include <sys/types.h> 
-#include <sys/stat.h>  
-#include <fcntl.h>     
-#include <unistd.h>    
-#include <stdio.h>   
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
 
-void main()
+union semun {
+    int val;
+};
+
+int main()
 {
-    char *ticketFile = "ticket-file.txt"; 
+    const char *ticketFile = "ticket-file.txt";
+    int fd;
+    int ticket;
+    ssize_t n;
 
-    int fileDescriptor;            
-    ssize_t readBytes, writeBytes; 
-    off_t lseekOffset;
-    int data; 
-
-    key_t semKey;     
-    int semIdentifier;
-    int semctlStatus;  
-    int semopStatus;   
-
-  
-    fileDescriptor = open(ticketFile, O_CREAT | O_RDWR, S_IRWXU);
-    if (fileDescriptor == -1)
-    {
-        perror("Error while creating / opening the ticket file!");
-        _exit(0);
+    fd = open(ticketFile, O_CREAT | O_RDWR, 0666);
+    if (fd == -1) {
+        perror("File open error");
+        return 1;
+    }
+    key_t key = ftok(".", 'A');
+    int semid = semget(key, 1, IPC_CREAT | 0666);
+    if (semid == -1) {
+        perror("semget error");
+        return 1;
     }
 
-    // Defines a semaphore's structure
-    union semun
-    {
-        int val;              
-        struct semid_ds *buf;  
-        unsigned short *array; 
-        struct seminfo *__buf; 
-    } semSet;
+    union semun u;
+    u.val = 1;
+    semctl(semid, 0, SETVAL, u);//set the initial semaphore value.
+    // Semaphore structure for P/V operations
+    struct sembuf P = {0, -1, 0};  // wait
+    struct sembuf V = {0,  1, 0};  // signal
 
-    semKey = ftok(".", 331);
-    if (semKey == -1)
-    {
-        perror("Error while computing key!");
-        _exit(1);
-    }
-
-    semIdentifier = semget(semKey, 1, 0); 
-    if (semIdentifier == -1)
-    {
-        semIdentifier = semget(semKey, 1, IPC_CREAT | 0700);  
-        if (semIdentifier == -1)
-        {
-            perror("Error while creating semaphore!");
-            _exit(1);
-        }
-
-        semSet.val = 1; // Set a binary semaphore
-        semctlStatus = semctl(semIdentifier, 0, SETVAL, semSet);
-        if (semctlStatus == -1)
-        {
-            perror("Error while initializing a binary sempahore!");
-            _exit(1);
-        }
-    }
-
-    struct sembuf semOp; 
-    semOp.sem_num = 0;
-    semOp.sem_flg = 0;
-
-    printf("Press enter to obtain lock on the critical section\n");
+    printf("Press ENTER to take the lock...\n");
     getchar();
-    // Use semaphore to lock the critical section
-    semOp.sem_op = -1;
-    semopStatus = semop(semIdentifier, &semOp, 1);
-    if (semopStatus == -1)
-    {
-        perror("Error while operating on semaphore!");
-        _exit(1);
-    }
-    
-    printf("Obtained lock on critical section!\n");
-    printf("Now entering critical section!\n");
-   
-
-    readBytes = read(fileDescriptor, &data, sizeof(data));
-    if (readBytes == -1)
-    {
-        perror("Error while reading from ticket file!");
-        _exit(0);
-    }
-    else if (readBytes == 0) 
-        data = 1;
-    else
-    {
-        data += 1;
-        lseekOffset = lseek(fileDescriptor, 0, SEEK_SET);
-        if (lseekOffset == -1)
-        {
-            perror("Error while seeking!");
-            _exit(0);
-        }
+    semop(semid, &P, 1);
+    printf("LOCK acquired. Entering critical section...\n");
+    n = read(fd, &ticket, sizeof(ticket));
+    if (n <= 0) {
+        ticket = 1;  // First ticket
+    } else {
+        ticket++;    // Increase ticket number
+        lseek(fd, 0, SEEK_SET);   // Reset pointer to start
     }
 
-    writeBytes = write(fileDescriptor, &data, sizeof(data));
-    if (writeBytes == -1)
-    {
-        perror("Error while writing to ticket file!");
-        _exit(1);
-    }
-
-    printf("Your ticker number is - %d\n", data);
-
-    printf("Press enter to exit from critical section!\n");
+   write(fd, &ticket, sizeof(ticket));
+   printf("Your ticket number is : %d\n", ticket);
+    printf("Press ENTER to release lock...\n");
     getchar();
+    semop(semid, &V, 1);
+    printf("LOCK released.\n");
 
-  
-
-    semOp.sem_op = 1;
-    semopStatus = semop(semIdentifier, &semOp, 1);
-    if (semopStatus == -1)
-    {
-        perror("Error while operating on semaphore!");
-        _exit(1);
-    }
-    close(fileDescriptor);
+    close(fd);
+    return 0;
 }
+
 /*
  Output:
 
 dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./a.out
-Press enter to obtain lock on the critical section
+Press ENTER to take the lock...
 
-Obtained lock on critical section!
-Now entering critical section!
-Your ticker number is - 1
-Press enter to exit from critical section!
+LOCK acquired. Entering critical section...
+Your ticket number is : 4
+Press ENTER to release lock...
 
+LOCK released.
 dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ cc 32a.c
 dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./a.out
-Press enter to obtain lock on the critical section
+Press ENTER to take the lock...
 
-Obtained lock on critical section!
-Now entering critical section!
-Your ticker number is - 2
-Press enter to exit from critical section!
+LOCK acquired. Entering critical section...
+Your ticket number is : 5
+Press ENTER to release lock...
 
-dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ cc 32a.c
-dell@dell-Inspiron-3593:~/Desktop/MT2025059/Hands-on_List2$ ./a.out
-Press enter to obtain lock on the critical section
-
-Obtained lock on critical section!
-Now entering critical section!
-Your ticker number is - 3
-Press enter to exit from critical section!
-
-
+LOCK released.
 
 */

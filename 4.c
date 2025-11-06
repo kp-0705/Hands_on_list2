@@ -25,6 +25,7 @@ gettimeofday(&e,NULL);
 time=(e.tv_sec - s.tv_sec)*1000000L+(e.tv_usec - s.tv_usec);
 
 printf("total Time(micro_sec):: %ld\n",time);
+
 return 0;
 }
 /*

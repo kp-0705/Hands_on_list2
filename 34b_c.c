@@ -51,7 +51,7 @@ void main()
   
 
     readBytes = read(socketFileDescriptor, dataFromServer, 100);
-    ;
+    
     if (readBytes == -1)
          perror("Error while reading from network via socket!");
     else

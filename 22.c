@@ -20,17 +20,16 @@ int main()
  int file_des;
  char para[500];
  mkfifo("FIFO_22",0666);
- file_des=open("FIFO_22",O_RDONLY | O_NONBLOCK);
+ file_des=open("FIFO_22",O_RDONLY | O_NONBLOCK); //do NOT block if writer hasn't written yet
  
  fd_set fd;
  FD_ZERO(&fd);
- FD_SET(file_des,&fd);
+ FD_SET(file_des,&fd);//Monitor this fd for readability
  
  struct timeval tv;
  tv.tv_sec=10;
  tv.tv_usec=0;
- int ans=select(file_des+1,&fd,NULL,NULL,&tv);
- 
+ int ans=select(file_des+1,&fd,NULL,NULL,&tv);//monitor multiple file descriptors at the same time 
  if(ans>0 && FD_ISSET(file_des,&fd))
  {
    read(file_des,para,sizeof(para));

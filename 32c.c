@@ -17,6 +17,7 @@ Date : 23th sept, 2025
 #include <sys/types.h> 
 #include <sys/stat.h>  
 #include <fcntl.h>     
+#include<stdlib.h>
 #include <unistd.h>    
 #include <stdio.h>   
 
@@ -38,42 +39,38 @@ void main()
     fileDescriptor = open(filename, O_RDONLY);
     if (fileDescriptor == -1)
     {
-        perror("Error while creating / opening the ticket file!");
-        _exit(0);
+        perror("Error!");
+        exit(0);
     }
 
-    // Defines a semaphore's structure
     union semun
     {
-        int val;               // Value of the semaphore
+        int val;               
     } semSet;
 
     semKey = ftok(".", 331);
     if (semKey == -1)
     {
         perror("Error while computing key!");
-        _exit(1);
+        exit(1);
     }
-
-    semIdentifier = semget(semKey, 1, 0); // Get the semaphore if it exists
+    semIdentifier = semget(semKey, 1, 0); 
     if (semIdentifier == -1)
     {
         semIdentifier = semget(semKey, 1, IPC_CREAT | 0700); // Create a new semaphore 
         if (semIdentifier == -1)
         {
             perror("Error while creating semaphore!");
-            _exit(1);
+            exit(1);
         }
-
         semSet.val = 2; // Set a counting semaphore
         semctlStatus = semctl(semIdentifier, 0, SETVAL, semSet);
         if (semctlStatus == -1)
         {
             perror("Error while initializing a binary sempahore!");
-            _exit(1);
+            exit(1);
         }
     }
-
     struct sembuf semOp; // Defines the operation on the semaphore
     semOp.sem_num = 0;
     semOp.sem_flg = IPC_NOWAIT;
@@ -86,39 +83,35 @@ void main()
     semopStatus = semop(semIdentifier, &semOp, 1);
     if (semopStatus == -1)
     {
-        perror("Error while operating on semaphore!");
-        _exit(1);
+        perror("Error semaphore!");
+        exit(1);
     }
 
-    printf("Obtained lock on critical section!");
+    printf("lock on CS!");
 
-    printf("Now entering critical section!");
-
-   
+    printf("entering CS!");
 
     readBytes = read(fileDescriptor, &data, 1000);
     if (readBytes == -1)
     {
-        perror("Error while reading from sample file!");
-        _exit(0);
+        perror("Error sample file!");
+        exit(0);
     }
     else if (readBytes == 0) // Sample file has no data
         printf("No data exists!\n");
     else
         printf("Sample data: \n %s", data);
 
-    printf("\n\nPress enter key to exit critical section!\n");
+    printf("\n\nPress enter key to exit CS\n");
     getchar();
-
-  
 
   
     semOp.sem_op = 1;
     semopStatus = semop(semIdentifier, &semOp, 1);
     if (semopStatus == -1)
     {
-        perror("Error while operating on semaphore!");
-        _exit(1);
+        perror("Error while semaphore!");
+        exit(1);
     }
 
     close(fileDescriptor);
